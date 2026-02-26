@@ -8,7 +8,6 @@ const nextConfig = {
     unoptimized: true,
   },
   webpack: (config) => {
-    // This is critical for your RSDK logic
     config.resolve.fallback = { fs: false };
     return config;
   },
