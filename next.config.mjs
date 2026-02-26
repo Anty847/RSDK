@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  // This is the key: it forces paths to be relative (./_next) 
-  // instead of absolute (/_next)
-  assetPrefix: './', 
+  // Use an empty string to avoid the 'leading slash' error 
+  // while keeping the build portable
+  assetPrefix: '', 
+  trailingSlash: true,
   images: {
     unoptimized: true,
   },
