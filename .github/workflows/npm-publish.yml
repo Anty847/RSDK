@@ -20,27 +20,23 @@ jobs:
           node-version: 18
           cache: 'npm'
 
-      - name: Install & Build
-        run: |
-          npm install
-          # We must ensure next.config.mjs has 'output: export'
-          npm run build 
 
-      - name: Flatten to Single File 📦
+      - name: Build and Export
+        run: npm run build
+
+      - name: Flatten to Single File using Monolith 📦
         run: |
-          # Install a tool designed to inline Next.js exports
-          npm install -g "inline-assets"
+          # Install Monolith (a specialized tool for single-file bundling)
+          sudo apt-get install -y monolith
           
-          # Move into the build directory
+          # Move into the output directory
           cd out
           
-          # This command finds your index.html and replaces 
-          # <script src="..."> with the actual code from the file.
-          inline-assets index.html ../single-dist/index.html
+          # Monolith will crawl index.html and embed EVERY asset as Base64/Inline
+          # -i: removes scripts (optional, but keep it off if you want JS)
+          # -v: verbose output
+          monolith index.html -o ../single-dist/index.html
           
-          # Copy images/assets that might not have been inlined
-          cp -r assets ../single-dist/assets || true
-
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
