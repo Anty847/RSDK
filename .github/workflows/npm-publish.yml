@@ -1,4 +1,4 @@
-name: Build and Deploy Portable RSDK
+name: Deploy Regular Static Site
 
 on:
   push:
@@ -20,43 +20,13 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install
-        run: npm install
-
-      - name: Build
-        run: npx next build
-
-      - name: Patch for Portable Use 🛠️
+      - name: Install & Build
         run: |
-          mkdir -p single-dist
-          python3 -c '
-          import re
-          
-          with open("out/index.html", "r") as f:
-              content = f.read()
-          
-          # 1. Set the CDN Base so assets work everywhere
-          base_url = "https://cdn.jsdelivr.net/gh/${{ github.repository }}@gh-pages/"
-          content = content.replace("<head>", f"<head><base href=\"{base_url}\">")
-
-          # 2. STRIP HYDRATION SCRIPTS
-          # We remove the scripts that cause the infinite loading loop 
-          # but keep the CSS so the page looks correct.
-          content = re.sub(r"<script src=\"_next/static/chunks/[^\"]+\" async=\"\"></script>", "", content)
-          
-          # 3. Fix the "Black Screen" background
-          # Forces the body to be visible even if React doesnt start
-          content = content.replace("<body", "<body style=\"display: block !important;\"")
-
-          # 4. Path Cleaning for CSS
-          content = content.replace("href=\"/_next", "href=\"_next")
-
-          with open("single-dist/index.html", "w") as f:
-              f.write(content)
-          '
+          npm install
+          npx next build
 
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: single-dist
+          folder: out
           branch: gh-pages
