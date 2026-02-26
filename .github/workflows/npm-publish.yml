@@ -24,24 +24,24 @@ jobs:
         run: npm install
 
       - name: Build Static Site
-        # npx ensures the 'next' command is found even if pathing is weird
         run: npx next build
 
       - name: Install Monolith 📦
         run: sudo apt-get update && sudo apt-get install -y monolith
 
-      - name: Flatten to Single File
+      - name: Prepare and Flatten
         run: |
-          # Create a directory for the single file result
+          # Create destination
           mkdir single-dist
           
-          # Use monolith to bundle everything into one file.
-          # We target out/index.html which was created by the build step.
+          # FIX: Next.js often puts a leading / in the HTML even if prefix is empty.
+          # We strip leading slashes from src and href so Monolith can find them locally.
+          sed -i 's/src="\//src="/g' out/index.html
+          sed -i 's/href="\//href="/g' out/index.html
+          
+          # Bundle everything into one file
           monolith ./out/index.html -o ./single-dist/index.html
           
-          # Optional: Copy favicon if you want it to show in browser tabs
-          cp ./out/favicon.ico ./single-dist/favicon.ico || true
-
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
