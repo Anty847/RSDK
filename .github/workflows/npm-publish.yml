@@ -1,4 +1,4 @@
-name: Build Single-File RSDK Library
+name: Build and Deploy Single-File RSDK
 
 on:
   push:
@@ -17,27 +17,44 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm install
+
       - name: Build Static Site
-        run: npx next build
+        # We disable Turbo here to ensure your custom Webpack config (fs: false) is used
+        run: NODE_OPTIONS='--no-turbo' npx next build
 
-      - name: Patch Index for Standalone Use
+      - name: Create Portable Single-File 📦
         run: |
-          # 1. Inject the Base URL so it knows where to find assets on the CDN
-          # This ensures images and CSS load even if the file is moved
-          sed -i 's|<head>|<head><base href="https://cdn.jsdelivr.net/gh/${{ github.repository }}@gh-pages/">|' out/index.html
+          mkdir -p single-dist
           
-          # 2. Fix the "Black Screen" by forcing the Next.js router to stay at root
-          sed -i 's|</head>|<script>window.__NEXT_DATA__={props:{pageProps:{}},page:"/",query:{},buildId:"prod",nextExport:true};</script></head>|' out/index.html
+          # Use Python to sanitize paths and inject the 'No-Black-Screen' fix
+          python3 -c '
+          import os
+          with open("out/index.html", "r") as f:
+              content = f.read()
+          
+          # 1. Base URL: Points to your gh-pages branch so assets work anywhere
+          base_tag = "<base href=\"https://cdn.jsdelivr.net/gh/${{ github.repository }}@gh-pages/\">"
+          content = content.replace("<head>", "<head>" + base_tag)
 
-          # 3. Strip leading slashes from ALL assets to make them relative to the base tag
-          sed -i 's/src="\//src="/g' out/index.html
-          sed -i 's/href="\//href="/g' out/index.html
+          # 2. Router Fix: Prevents Next.js from wiping the screen to black
+          router_fix = "<script>window.__NEXT_DATA__={props:{pageProps:{}},page:\"/\",query:{},buildId:\"prod\",nextExport:true};</script>"
+          content = content.replace("</head>", router_fix + "</head>")
+
+          # 3. Path Fix: Removes leading slashes that cause 404s in local files
+          content = content.replace("src=\"/", "src=\"")
+          content = content.replace("href=\"/", "href=\"")
+
+          with open("single-dist/index.html", "w") as f:
+              f.write(content)
+          '
 
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: out
+          folder: single-dist
           branch: gh-pages
