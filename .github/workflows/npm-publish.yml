@@ -26,21 +26,24 @@ jobs:
       - name: Build Static Site
         run: npx next build
 
-      - name: Install Monolith 📦
-        run: sudo apt-get update && sudo apt-get install -y monolith
-
-      - name: Prepare and Flatten
+      - name: Flatten to Single File 📦
         run: |
+          # Use a Node-based inliner that is easy to install
+          npm install -g html-inline
+          
           # Create destination
           mkdir single-dist
           
-          # FIX: Next.js often puts a leading / in the HTML even if prefix is empty.
-          # We strip leading slashes from src and href so Monolith can find them locally.
+          # 1. Strip leading slashes so the inliner finds files in ./out/
           sed -i 's/src="\//src="/g' out/index.html
           sed -i 's/href="\//href="/g' out/index.html
           
-          # Bundle everything into one file
-          monolith ./out/index.html -o ./single-dist/index.html
+          # 2. Inject the Next.js Router Fix to prevent the Black Screen
+          sed -i 's|</head>|<script>window.__NEXT_DATA__={props:{pageProps:{}},page:"/",query:{},buildId:"prod",nextExport:true};</script></head>|' out/index.html
+          
+          # 3. Inline everything (CSS, JS) into one file
+          # We run this from inside the 'out' folder so paths resolve
+          cd out && html-inline index.html > ../single-dist/index.html
           
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
