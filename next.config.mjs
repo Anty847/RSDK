@@ -1,8 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  assetPrefix: '', 
-  trailingSlash: true,
+  // No assetPrefix tricks here - keep it standard
   reactStrictMode: false,
   images: {
     unoptimized: true,
