@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  assetPrefix: '', // Empty string for portable relative paths
+  // Keep this empty so the build remains path-agnostic
+  assetPrefix: '', 
   trailingSlash: true,
   reactStrictMode: false,
   images: {
