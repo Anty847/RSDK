@@ -1,20 +1,14 @@
-name: Deploy Next.js to GitHub Pages
+name: Build and Deploy to gh-pages
 
 on:
   push:
     branches: [ main ]
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  contents: write # Required to push to the gh-pages branch
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,25 +18,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Build and Export Next.js static site
+      - name: Build
         run: npm run build
 
-      - name: Upload static site
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: ./out
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          folder: out # The folder Next.js builds to
+          branch: gh-pages # The branch the action will create/update
