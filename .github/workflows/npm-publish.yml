@@ -1,4 +1,4 @@
-name: Build and Deploy CDN-Linked RSDK
+name: Build and Deploy Portable RSDK
 
 on:
   push:
@@ -24,35 +24,32 @@ jobs:
         run: npm install
 
       - name: Build
-        # Standard build; Webpack is used by default if Turbo isn't requested
         run: npx next build
 
-      - name: Patch for CDN 🌐
+      - name: Patch for Portable Use 🛠️
         run: |
           mkdir -p single-dist
           python3 -c '
-          import os, re
+          import re
           
           with open("out/index.html", "r") as f:
               content = f.read()
           
-          # 1. Define the CDN Base
+          # 1. Set the CDN Base so assets work everywhere
           base_url = "https://cdn.jsdelivr.net/gh/${{ github.repository }}@gh-pages/"
-          
-          # 2. Inject the Base Tag and the Router Fix
-          # This forces Next.js to stay on the "/" route and not go black
-          head_patches = [
-              f"<base href=\"{base_url}\">",
-              "<script>window.__NEXT_DATA__={props:{pageProps:{}},page:\"/\",query:{},buildId:\"prod\",nextExport:true};</script>"
-          ]
-          content = content.replace("<head>", "<head>" + "".join(head_patches))
+          content = content.replace("<head>", f"<head><base href=\"{base_url}\">")
 
-          # 3. Aggressive Path Cleaning
-          # Replaces any src="/_next..." or href="/_next..." with relative versions
-          content = content.replace("src=\"/_next", "src=\"_next")
+          # 2. STRIP HYDRATION SCRIPTS
+          # We remove the scripts that cause the infinite loading loop 
+          # but keep the CSS so the page looks correct.
+          content = re.sub(r"<script src=\"_next/static/chunks/[^\"]+\" async=\"\"></script>", "", content)
+          
+          # 3. Fix the "Black Screen" background
+          # Forces the body to be visible even if React doesnt start
+          content = content.replace("<body", "<body style=\"display: block !important;\"")
+
+          # 4. Path Cleaning for CSS
           content = content.replace("href=\"/_next", "href=\"_next")
-          content = content.replace("src=\"/assets", "src=\"assets")
-          content = content.replace("href=\"/assets", "href=\"assets")
 
           with open("single-dist/index.html", "w") as f:
               f.write(content)
