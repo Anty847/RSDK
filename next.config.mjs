@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export', // Forces Next.js to generate the /out folder
+  output: 'export',
+  // This is the key: it forces paths to be relative (./_next) 
+  // instead of absolute (/_next)
+  assetPrefix: './', 
   images: {
-    unoptimized: true, // Required for static exports on GH Pages
+    unoptimized: true,
   },
-  // If your site is at jdsle.github.io/RSDK/, add:
-  // basePath: '/RSDK',
 };
 
 export default nextConfig;
