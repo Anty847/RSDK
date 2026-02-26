@@ -1,4 +1,4 @@
-name: Build and Deploy to gh-pages
+name: Build SingleFile and Deploy
 
 on:
   workflow_dispatch: 
@@ -6,29 +6,40 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: write # Required to push to the gh-pages branch
+  contents: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install & Build Next.js
+        run: |
+          npm install
+          npm run build
 
-      - name: Build
-        run: npm run build
+      - name: Generate SingleFile 📦
+        run: |
+          # Install SingleFile CLI
+          npm install -g "single-file-cli"
+          
+          # Use SingleFile to process the local 'out/index.html'
+          # This will inline all CSS, JS, and images from the 'out' folder
+          single-file --browser-executable-path /usr/bin/google-chrome ./out/index.html ./single-dist/index.html
+          
+          # Optional: Copy other assets if needed, but SingleFile should have inlined them
+          cp ./out/favicon.ico ./single-dist/favicon.ico || true
 
-      - name: Deploy to gh-pages branch 🚀
+      - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: out # The folder Next.js builds to
-          branch: gh-pages # The branch the action will create/update
+          folder: single-dist # Deploy the single-file version
+          branch: gh-pages
