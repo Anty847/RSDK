@@ -11,32 +11,37 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm install
 
-      - name: Build and Export
-        run: npm run build
+      - name: Build Static Site
+        # npx ensures the 'next' command is found even if pathing is weird
+        run: npx next build
 
-      - name: Flatten to Single File using Monolith 📦
+      - name: Install Monolith 📦
+        run: sudo apt-get update && sudo apt-get install -y monolith
+
+      - name: Flatten to Single File
         run: |
-          # Install Monolith (a specialized tool for single-file bundling)
-          sudo apt-get install -y monolith
+          # Create a directory for the single file result
+          mkdir single-dist
           
-          # Move into the output directory
-          cd out
+          # Use monolith to bundle everything into one file.
+          # We target out/index.html which was created by the build step.
+          monolith ./out/index.html -o ./single-dist/index.html
           
-          # Monolith will crawl index.html and embed EVERY asset as Base64/Inline
-          # -i: removes scripts (optional, but keep it off if you want JS)
-          # -v: verbose output
-          monolith index.html -o ../single-dist/index.html
-          
+          # Optional: Copy favicon if you want it to show in browser tabs
+          cp ./out/favicon.ico ./single-dist/favicon.ico || true
+
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
