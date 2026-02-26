@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  // Keep this empty so the build remains path-agnostic
   assetPrefix: '', 
   trailingSlash: true,
   reactStrictMode: false,
@@ -9,6 +8,7 @@ const nextConfig = {
     unoptimized: true,
   },
   webpack: (config) => {
+    // This is critical for your RSDK logic
     config.resolve.fallback = { fs: false };
     return config;
   },
